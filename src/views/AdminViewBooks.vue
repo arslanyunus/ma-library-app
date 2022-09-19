@@ -9,6 +9,13 @@
                 ></a-alert>
             </a-spin>
         </div>
+        <!--       MODAL FOR NOTIFY BUTTON     -->
+        <a-modal v-model:visible="modalNotifyVisible" title="Notify User"
+                 @ok="notifyHandleOk"
+                 @cancel="notifyHandleCancel"
+        >
+            <p>Are you sure you want to notify the user to return the book?</p>
+        </a-modal>
         <!--       MODAL FOR DELETE BUTTON     -->
         <a-modal v-model:visible="modalDeleteVisible" title="Delete Book"
                  @ok="deleteHandleOk"
@@ -27,17 +34,36 @@
             />
         </a-modal>
         <!--        HEADER AND ADD BUTTON       -->
-        <div v-if="storeLibrary.booksLoaded" class="flex justify-between w-10/12">
-            <span class=" font-medium text-3xl mt-5 mt-10 ml-12">Books</span>
-            <a-button class = "mt-14" title="Add Book"
-                      type="primary"
-                      @click="showAddDrawer"
-            >
-                <template #icon>
-                    <plus-outlined class = "text-lg"/>
-                </template>
-            </a-button>
+        <div v-if="storeLibrary.booksLoaded" class="mt-5 w-full">
+            <span class=" font-medium text-3xl ml-12">Books</span>
         </div>
+        <!--        ADD BUTTON       -->
+        <div class = "w-full">
+            <div class = "ml-12 mt-28 w-full">
+                <a-typography-text class="font-medium">Filter (By User):</a-typography-text>
+                <a-input v-model:value="filteredUser" class = "ml-5 w-2/12"
+                         placeholder="Enter User Email"
+                         @keyup.enter="filterUserBooks"
+                         @change="resetFilterUserBooks"
+                />
+            </div>
+            <div v-if="storeLibrary.booksLoaded" class="flex justify-between w-10/12 ml-12 mt-5">
+                <div>
+                    <a-typography-text class="font-medium">Filter (Status):</a-typography-text>
+                    <a-checkbox v-model:checked="storeLibrary.checkedAvailable" class="ml-9" @change="availableToggled">Reserved</a-checkbox>
+                    <a-checkbox v-model:checked="storeLibrary.checkedReserved" class="ml-9" @change="reservedToggled">Available</a-checkbox>
+                </div>
+                <a-button title="Add Book"
+                          type="primary"
+                          @click="showAddDrawer"
+                >
+                    <template #icon>
+                        <plus-outlined class = "text-lg"/>
+                    </template>
+                </a-button>
+            </div>
+        </div>
+
         <a-table
             v-if="storeLibrary.booksLoaded"
             class="ma-keyword-table w-10/12 ml-12 mt-7 " size="middle"
@@ -57,7 +83,16 @@
             <a-table-column key="title" title="Title" data-index="title"/>
             <a-table-column key="isbn" title="Isbn" data-index="isbn"/>
             <a-table-column key="author" title="Author" data-index="author"/>
-            <a-table-column key="status" title="Status" data-index="status"/>
+            <a-table-column key="status" title="Status" data-index="status">
+                <template #default="{ record }">
+                    <span v-if="record.status === 'AVAILABLE'" class ="text-green-500">
+                        {{record.status}}
+                    </span>
+                    <span class= "text-rose-700" v-if="record.status === 'RESERVED'">
+                        {{record.status}}
+                    </span>
+                </template>
+            </a-table-column>
             <a-table-column key="action" title="Action">
                 <template #default="{ record }">
                     <span>
@@ -69,6 +104,9 @@
                         </template>
                         <template v-if= "(record.loaned_by === currentUser) && (record.status === 'RESERVED')">
                             <a-button type = "primary" class = "ml-3"  @click="returnBook(record)">Return</a-button>
+                        </template>
+                        <template v-if= "(record.loaned_by != currentUser) && (record.status === 'RESERVED')">
+                            <a-button type = "primary" class = "ml-3"  @click="notifyUser(record)">Notify</a-button>
                         </template>
                     </span>
                 </template>
@@ -222,16 +260,21 @@
     import { useStoreLibrary } from '@/stores/storeLibrary.js';
     import { onMounted, reactive, ref } from 'vue';
     import { PlusOutlined } from '@ant-design/icons-vue';
-
+    import emailjs from '@emailjs/browser';
+    import { message } from 'ant-design-vue';
 
     //initialize store library
     const storeLibrary = useStoreLibrary();
-    //shows the loading screen
-    const hidden = ref(true);
+
     //shows the spinner in adds button drawer
     const apiFetching = ref(false);
     //storing reference to record when user clicks specific table fields
     const userSelectionRef = ref({});
+    const userNotificationRef = ref({});
+
+    //ref for the filtered user input box
+    const filteredUser = ref('');
+
     //debouncer ref for delaying api call
     const debounce = ref(null);
     //retrieves current user from store
@@ -271,11 +314,32 @@
     //modal code for the delete button
     const modalDeleteVisible = ref(false);
     async function deleteHandleOk(){
+        console.log(userSelectionRef);
         storeLibrary.deleteBooks(userSelectionRef.value.id);
         modalDeleteVisible.value=false;
     }
     function deleteHandleCancel(){
         modalDeleteVisible.value=false;
+    }
+
+    //modal code for the notify button
+    const modalNotifyVisible = ref(false);
+    async function notifyHandleOk(){
+        const templateParams = {
+            to_email: userNotificationRef.value.loaned_by,
+        };
+        emailjs.send('service_l7ls96k','template_9nqte71', templateParams, 'b4UBJFSg09nwOyZJ_')
+            .then((response) => {
+                console.log('SUCCESS!', response.status, response.text);
+                message.success('User has been notified');
+            }, (err) => {
+                console.log('FAILED...', err);
+                message.error('User could not be notified');
+            });
+        modalNotifyVisible.value=false;
+    }
+    function notifyHandleCancel(){
+        modalNotifyVisible.value=false;
     }
 
     //drawer logic
@@ -289,11 +353,11 @@
         clearTimeout(debounce.value);
         debounce.value = setTimeout(async () => {
             await findBookInfo();
-            console.log(booksJsonArr.value[0]);
             if (booksJsonArr.value.length > 1){
+                console.log(booksJsonArr.value[0]);
                 options.value =  [{ value: booksJsonArr.value[0].title }, { value: booksJsonArr.value[1].title }, { value: booksJsonArr.value[2].title }];
             }
-        }, 500);
+        }, 1300);
     };
     //function that gets called when user selects an option from the dropdown in the add form
     const onSelect = (value) => {
@@ -326,7 +390,7 @@
                     }
                 })
                 .catch((error) => {
-                    console.log(error);
+                    console.log('No such book exists in the records');
                 });
             apiFetching.value=false;
         }
@@ -356,12 +420,17 @@
         formStateEdit.bookIsbn = '';
         formStateEdit.bookImage = '';
     };
+    filteredUser.value = '';
+    storeLibrary.getBooks();
 
     //BUTTON LOGIC
     //Function to delete the book called by delete button
     function deleteBook(record){
         userSelectionRef.value = record;
         modalDeleteVisible.value = true;
+        filteredUser.value = '';
+        storeLibrary.getBooks();
+
     }
     //Function to checkout the book
     function checkoutBook(record){
@@ -370,7 +439,34 @@
     //Function to return the book
     function returnBook(record){
         storeLibrary.returnBooks(record.id);
+        filteredUser.value = '';
+        storeLibrary.getBooks();
 
+    }
+
+    //method to notify user
+    function notifyUser(record){
+        userNotificationRef.value=record;
+        modalNotifyVisible.value = true;
+    }
+
+    //toggle logic
+    function availableToggled(){
+        console.log(storeLibrary.checkedAvailable);
+        storeLibrary.getToggledBooks();
+    }
+    function reservedToggled(){
+        storeLibrary.getToggledBooks();
+    }
+
+    //filterUser Logic
+    function filterUserBooks(){
+        storeLibrary.getFilteredUserBooks(filteredUser.value);
+    }
+    function resetFilterUserBooks(){
+        if (filteredUser.value === ''){
+            storeLibrary.getBooks();
+        }
     }
 
     /*
@@ -378,7 +474,6 @@
  */
     onMounted(()=> {
         storeLibrary.getBooks();
-        hidden.value = false;
     });
 </script>
 

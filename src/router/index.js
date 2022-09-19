@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import AdminViewBooks from '../views/AdminViewBooks.vue';
+import AdminViewRequests from '../views/AdminViewRequests.vue';
 
 const routes = [
     {
@@ -10,8 +11,13 @@ const routes = [
     },
     {
         path: '/admin-view-book',
-        name: 'addbook',
+        name: 'adminbook',
         component: AdminViewBooks,
+    },
+    {
+        path: '/admin-view-requests',
+        name: 'adminreview',
+        component: AdminViewRequests,
     },
 ];
 
