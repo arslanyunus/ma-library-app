@@ -83,32 +83,49 @@
             <a-table-column key="title" title="Title" data-index="title"/>
             <a-table-column key="isbn" title="Isbn" data-index="isbn"/>
             <a-table-column key="author" title="Author" data-index="author"/>
+            <a-table-column key="loaned_by" title="Loaned By" data-index="loaned_by">
+                <template #default="{ record }">
+                    <span v-if="record.status === 'RESERVED'">
+                        {{record.loaned_by}}
+                    </span>
+                </template>
+            </a-table-column>
             <a-table-column key="status" title="Status" data-index="status">
                 <template #default="{ record }">
                     <span v-if="record.status === 'AVAILABLE'" class ="text-green-500">
                         {{record.status}}
                     </span>
-                    <span class= "text-rose-700" v-if="record.status === 'RESERVED'">
+                    <span v-if="record.status === 'RESERVED'" class= "text-rose-700">
                         {{record.status}}
                     </span>
                 </template>
             </a-table-column>
             <a-table-column key="action" title="Action">
                 <template #default="{ record }">
+
                     <span>
-                        <a-button type="primary" @click="showEditDrawer(record)">Edit</a-button>
+                        <a-button class="md:mb-3 lg:mb-0" type="primary" @click="showEditDrawer(record)">Edit</a-button>
                         <a-divider type="vertical"/>
-                        <a-button type="primary" danger @click="deleteBook(record)">Delete</a-button>
+                        <a-button class="md:mb-3 lg:mb-0" type="primary"
+                                  danger
+                                  @click="deleteBook(record)"
+                        >Delete</a-button>
                         <template v-if= "record.status === 'AVAILABLE'">
-                            <a-button type = "primary" class = "ml-3"  @click="checkoutBook(record)">Checkout</a-button>
+                            <a-divider type="vertical"/>
+                            <a-button type = "primary"  @click="checkoutBook(record)">Checkout</a-button>
                         </template>
-                        <template v-if= "(record.loaned_by === currentUser) && (record.status === 'RESERVED')">
-                            <a-button type = "primary" class = "ml-3"  @click="returnBook(record)">Return</a-button>
+
+                        <template  v-if= "(record.loaned_by === currentUser) && (record.status === 'RESERVED')">
+                            <a-divider type="vertical"/>
+                            <a-button type = "primary"   @click="returnBook(record)">Return</a-button>
                         </template>
                         <template v-if= "(record.loaned_by != currentUser) && (record.status === 'RESERVED')">
-                            <a-button type = "primary" class = "ml-3"  @click="notifyUser(record)">Notify</a-button>
+                            <a-divider type="vertical"/>
+                            <a-button type = "primary" @click="notifyUser(record)">Notify</a-button>
                         </template>
                     </span>
+
+
                 </template>
             </a-table-column>
         </a-table>
