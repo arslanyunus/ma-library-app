@@ -214,8 +214,6 @@
     //initialize store library
     const storeLibrary = useStoreLibrary();
 
-    //shows the loading screen
-
     //storing reference to record when user clicks specific table fields
     const userSelectionRef = ref({});
 

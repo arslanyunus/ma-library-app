@@ -199,7 +199,10 @@ export const useStoreLibrary = defineStore('storeLibrary', {
             this.requestsLoaded = false;
             this.checkedAccepted = false;
             this.checkedRejected = false;
-            const queryRequests = query(collection(db, 'requests'), where('status', '==', 'PENDING'));
+            let queryRequests = query(collection(db, 'requests'), where('status', '==', 'PENDING'));
+            if (this.userPrivilege === 'NORMAL'){
+                queryRequests = query(collection(db, 'requests'), where('requested_by', '==', this.userLogged));
+            }
             onSnapshot(queryRequests, (querySnapshot) => {
                 this.requests = [];
                 querySnapshot.forEach((doc) => {
@@ -211,6 +214,7 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                         reason: doc.data().reason,
                         status: doc.data().status,
                         requested_by: doc.data().requested_by,
+                        reject_reason: doc.data().reject_reason,
 
                     };
                     this.requests.push(request);
@@ -273,7 +277,6 @@ export const useStoreLibrary = defineStore('storeLibrary', {
             let queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'));
             this.requestsLoaded = false;
             if (this.checkedRejected && this.checkedAccepted){
-                console.log('im here');
                 queryRequests = query(collection(db, 'requests'), where('status', '!=', 'PENDING'));
             } else if (!this.checkedRejected && this.checkedAccepted){
                 queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'));
@@ -291,6 +294,34 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     reason: doc.data().reason,
                     status: doc.data().status,
                     requested_by: doc.data().requested_by,
+                    reject_reason: doc.data().reject_reason,
+                };
+                this.requests.push(request);
+            });
+            this.requestsLoaded = true;
+        },
+        async getToggledNormalRequests() {
+            let queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'), where('requested_by', '==', this.userLogged) );
+            this.requestsLoaded = false;
+            if (this.checkedRejected && this.checkedAccepted){
+                queryRequests = query(collection(db, 'requests'), where('status', '!=', 'PENDING'), where('requested_by', '==', this.userLogged));
+            } else if (!this.checkedRejected && this.checkedAccepted){
+                queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'), where('requested_by', '==', this.userLogged));
+            } else if (!this.checkedRejected && !this.checkedAccepted){
+                queryRequests = query(collection(db, 'requests'), where('requested_by', '==', this.userLogged));
+            }
+            const querySnapshot = await getDocs(queryRequests);
+            this.requests=[];
+            querySnapshot.forEach((doc) => {
+                let request = {
+                    id: doc.id,
+                    title: doc.data().title,
+                    isbn: doc.data().isbn,
+                    amazon_link: doc.data().amazon_link,
+                    reason: doc.data().reason,
+                    status: doc.data().status,
+                    requested_by: doc.data().requested_by,
+                    reject_reason: doc.data().reject_reason,
                 };
                 this.requests.push(request);
             });
