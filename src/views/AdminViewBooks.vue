@@ -437,8 +437,6 @@
         formStateEdit.bookIsbn = '';
         formStateEdit.bookImage = '';
     };
-    filteredUser.value = '';
-    storeLibrary.getBooks();
 
     //BUTTON LOGIC
     //Function to delete the book called by delete button

@@ -9,6 +9,7 @@ export const useStoreLibrary = defineStore('storeLibrary', {
         return {
             books: [],
             userLogged: '',
+            userPrivilege: '',
             booksTemp: [],
             booksLoaded: false,
             requestsLoaded: false,

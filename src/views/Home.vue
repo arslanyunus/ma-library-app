@@ -18,9 +18,9 @@
 
     const fakePayload = {
         sub: '133434',
-        username: 'random@mobileaction.co',
+        username: 'normal@mobileaction.co',
         membershipType: 'ADMIN',
-        accountId: 19901993,
+        accountId: 1,
         maAdmin: false,
         type: 'access',
         platform: 'SEARCHADS_COM',
@@ -33,7 +33,9 @@
             'EXPORT_CSV',
             'ACCESS_SDK_INTELLIGENCE',
             'ACCESS_SDK_INTELLIGENCE',
-            'ADMIN_MANAGE_ADMINS',
+            'ACCESS_ADMIN_DASHBOARD',
+            //ACCESS_ADMIN_DASHBOARD
+            //ADMIN_MANAGE_ADMINS
         ],
     };
     async function createUser() {
@@ -57,12 +59,14 @@
     }
 
     async function checkJsonCredentials(){
-
+        await createUser();
+        storeLibrary.userLogged = userEmail.value;
         if (fakePayload.features.includes('ADMIN_MANAGE_ADMINS') ){
-            await createUser();
-            storeLibrary.userLogged = userEmail.value;
+            storeLibrary.userPrivilege = 'ADMIN';
             await router.push('/admin-view-book');
         } else {
+            storeLibrary.userPrivilege = 'NORMAL';
+            await router.push('/normal-view-book');
             console.log('normal user');
         }
     }
