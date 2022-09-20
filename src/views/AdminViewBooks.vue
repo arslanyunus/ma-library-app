@@ -328,7 +328,7 @@
         const templateParams = {
             to_email: userNotificationRef.value.loaned_by,
         };
-        emailjs.send('service_l7ls96k','template_9nqte71', templateParams, 'b4UBJFSg09nwOyZJ_')
+        emailjs.send(import.meta.env.VITE_SERVICE_ID,import.meta.env.VITE_TEMPLATE_ID, templateParams, import.meta.env.VITE_PUBLIC_KEY)
             .then((response) => {
                 console.log('SUCCESS!', response.status, response.text);
                 message.success('User has been notified');
