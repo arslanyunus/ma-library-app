@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { collection, getDocs, addDoc, query, where, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase/init';
 import { message } from 'ant-design-vue';
-//const booksCollectionRef = collection(db, 'books');
+
 
 export const useStoreLibrary = defineStore('storeLibrary', {
     state: () => {
@@ -45,24 +45,6 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                 });
                 this.booksLoaded=true;
             });
-
-            // const queryBooks = query(collection(db, 'books'), where('deleted_at', '==', ''));
-            // const querySnapshot = await getDocs(queryBooks);
-            // querySnapshot.forEach((doc) => {
-            //     let book = {
-            //         id: doc.id,
-            //         image_url: doc.data().image_url,
-            //         title: doc.data().title,
-            //         isbn: doc.data().isbn,
-            //         author: doc.data().author,
-            //         status: doc.data().status,
-            //         added_at: doc.data().added_at,
-            //         added_by: doc.data().added_by,
-            //         loaned_by: doc.data().loaned_by,
-            //         loaned_at: doc.data().loaned_at,
-            //     };
-            //     this.books.push(book);
-            // });
         },
         async addBooks(title, isbn, author, imageUrl) {
             let currentDate = new Date(),
@@ -93,6 +75,7 @@ export const useStoreLibrary = defineStore('storeLibrary', {
             await setDoc(doc(db,'books', idToDelete), {
                 deleted_at: addedtime,
                 deleted_by: this.userLogged,
+                status: 'DELETED',
 
             }, { merge: true });
 
@@ -108,7 +91,6 @@ export const useStoreLibrary = defineStore('storeLibrary', {
             }, { merge: true });
 
             message.success('Successfully edited book');
-
         },
         async checkoutBooks(idToCheckout){
             let currentDate = new Date(),
@@ -120,28 +102,28 @@ export const useStoreLibrary = defineStore('storeLibrary', {
             }, { merge: true });
 
             message.success('Successfully checked out book');
-
         },
         async returnBooks(idToReturn){
             let currentDate = new Date(),
                 addedtime = currentDate.toString();
             await setDoc(doc(db,'books', idToReturn), {
                 status: 'AVAILABLE',
-                returned_at: currentDate,
+                returned_at: addedtime,
             }, { merge: true });
             message.success('Successfully returned book');
         },
-        async getToggledBooks() {
-            let queryRequests = query(collection(db, 'books'), where('status', '==', 'RESERVED'));
-            this.booksLoaded = false;
-            if (this.checkedAvailable && this.checkedReserved){
-                queryRequests = query(collection(db, 'books'), where('status', '!=', ''));
-            } else if (!this.checkedAvailable && this.checkedReserved){
-                queryRequests = query(collection(db, 'books'), where('status', '==', 'AVAILABLE'));
-            } else if (!this.checkedAvailable && !this.checkedReserved){
-                queryRequests = query(collection(db, 'books'), where('status', '!=', ''));
+        async getBooksByStatus(status, buttonDropdown, userInput) {
+            let queryBooks = query(collection(db, 'books'), where('status', '!=', 'DELETED')); //show all books
+            if (userInput.length !== 0){
+                if (buttonDropdown === 'Book Title'){
+                    queryBooks = query(collection(db, 'books'), where('title', '>=', userInput), where('title', '<=', userInput + '\uf8ff'));
+                } else if (buttonDropdown === 'ISBN'){
+                    queryBooks = query(collection(db, 'books'), where('isbn', '>=', userInput), where('isbn', '<=', userInput + '\uf8ff'));
+                } else if (buttonDropdown ==='User Email'){
+                    queryBooks = query(collection(db, 'books'), where('loaned_by', '>=', userInput), where('loaned_by', '<=', userInput + '\uf8ff'));
+                }
             }
-            const querySnapshot = await getDocs(queryRequests);
+            const querySnapshot = await getDocs(queryBooks);
             this.books=[];
             querySnapshot.forEach((doc) => {
                 let book = {
@@ -156,12 +138,33 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     loaned_by: doc.data().loaned_by,
                     loaned_at: doc.data().loaned_at,
                 };
-                this.books.push(book);
+                if ((status === 'Available' || status ==='Both') && buttonDropdown ==='User Email' &&userInput.length != 0) {
+                    if (doc.data().status === 'RESERVED') {
+                        this.books.push(book);
+                    }
+                } else if (status==='Available'){
+                    if (doc.data().status === 'AVAILABLE'){
+                        this.books.push(book);
+                    }
+                } else if (status === 'Reserved'){
+                    if (doc.data().status === 'RESERVED'){
+                        this.books.push(book);
+                    }
+                } else {
+                    this.books.push(book);
+                }
+
             });
             this.booksLoaded = true;
         },
-        async getFilteredUserBooks(userEmail) {
-            let queryRequests = query(collection(db, 'books'), where('loaned_by', '==', userEmail), where('status', '!=', 'AVAILABLE'));
+        async getFilteredUserBooks(userInput, typeSelected) {
+            let queryRequests = query(collection(db, 'books'), where('loaned_by', '>=', userInput), where('loaned_by', '<=', userInput + '\uf8ff'));
+            if (typeSelected === 'Book Title'){
+                queryRequests = query(collection(db, 'books'), where('title', '>=', userInput), where('title', '<=', userInput + '\uf8ff'));
+            } else if (typeSelected === 'ISBN'){
+                queryRequests = query(collection(db, 'books'), where('isbn', '>=', userInput), where('isbn', '<=', userInput + '\uf8ff'));
+            }
+
             this.booksLoaded = false;
             const querySnapshot = await getDocs(queryRequests);
             this.books=[];
@@ -178,7 +181,13 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     loaned_by: doc.data().loaned_by,
                     loaned_at: doc.data().loaned_at,
                 };
-                this.books.push(book);
+                if (typeSelected === 'User Email'){
+                    if (doc.data().status !== 'AVAILABLE'){
+                        this.books.push(book);
+                    }
+                } else {
+                    this.books.push(book);
+                }
             });
             this.booksLoaded = true;
         },
@@ -191,9 +200,7 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                 email: email,
                 created_at: addedtime,
             }, { merge: true });
-
-            message.success('Successfully edited book');
-
+            message.success('Successfully created User');
         },
         async getRequests() {
             this.requestsLoaded = false;
@@ -215,7 +222,6 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                         status: doc.data().status,
                         requested_by: doc.data().requested_by,
                         reject_reason: doc.data().reject_reason,
-
                     };
                     this.requests.push(request);
                 });
@@ -273,15 +279,23 @@ export const useStoreLibrary = defineStore('storeLibrary', {
             message.success('Request has been rejected');
 
         },
-        async getToggledRequests() {
-            let queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'));
-            this.requestsLoaded = false;
-            if (this.checkedRejected && this.checkedAccepted){
-                queryRequests = query(collection(db, 'requests'), where('status', '!=', 'PENDING'));
-            } else if (!this.checkedRejected && this.checkedAccepted){
-                queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'));
-            } else if (!this.checkedRejected && !this.checkedAccepted){
-                queryRequests = query(collection(db, 'requests'), where('status', '==', 'PENDING'));
+        async getRequestsByStatus(status, buttonDropdown, userInput) {
+            let queryRequests = query(collection(db, 'requests'), where('status', '==', 'PENDING')); //show all books
+            if (userInput.length !== 0){
+                if (buttonDropdown === 'Book Title'){
+                    queryRequests = query(collection(db, 'requests'), where('title', '>=', userInput), where('title', '<=', userInput + '\uf8ff'));
+                } else if (buttonDropdown === 'ISBN'){
+                    queryRequests = query(collection(db, 'requests'), where('isbn', '>=', userInput), where('isbn', '<=', userInput + '\uf8ff'));
+                } else if (buttonDropdown ==='User Email'){
+                    queryRequests = query(collection(db, 'requests'), where('requested_by', '>=', userInput), where('requested_by', '<=', userInput + '\uf8ff'));
+                }
+            } else {
+                console.log(status);
+                if (status === 'Accepted'){
+                    queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'));
+                } else if (status === 'Rejected'){
+                    queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'));
+                }
             }
             const querySnapshot = await getDocs(queryRequests);
             this.requests=[];
@@ -296,19 +310,43 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     requested_by: doc.data().requested_by,
                     reject_reason: doc.data().reject_reason,
                 };
-                this.requests.push(request);
+                if (status === 'Accepted') {
+                    console.log(status);
+                    if (doc.data().status === 'ACCEPTED') {
+                        this.requests.push(request);
+                    }
+                } else if (status==='Rejected'){
+                    if (doc.data().status === 'REJECTED'){
+                        this.requests.push(request);
+                    }
+                } else if (status === 'Pending'){
+                    if (doc.data().status === 'PENDING'){
+                        this.requests.push(request);
+                    }
+                } else {
+                    this.requests.push(request);
+                }
             });
-            this.requestsLoaded = true;
+            this.booksLoaded = true;
         },
-        async getToggledNormalRequests() {
-            let queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'), where('requested_by', '==', this.userLogged) );
-            this.requestsLoaded = false;
-            if (this.checkedRejected && this.checkedAccepted){
-                queryRequests = query(collection(db, 'requests'), where('status', '!=', 'PENDING'), where('requested_by', '==', this.userLogged));
-            } else if (!this.checkedRejected && this.checkedAccepted){
-                queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'), where('requested_by', '==', this.userLogged));
-            } else if (!this.checkedRejected && !this.checkedAccepted){
-                queryRequests = query(collection(db, 'requests'), where('requested_by', '==', this.userLogged));
+
+        async getRequestsByStatusNormal(status, buttonDropdown, userInput) {
+            let queryRequests = query(collection(db, 'requests'), where('status', '==', 'PENDING')); //show all books
+            if (userInput.length !== 0){
+                if (buttonDropdown === 'Book Title'){
+                    queryRequests = query(collection(db, 'requests'), where('title', '>=', userInput), where('title', '<=', userInput + '\uf8ff'));
+                } else if (buttonDropdown === 'ISBN'){
+                    queryRequests = query(collection(db, 'requests'), where('isbn', '>=', userInput), where('isbn', '<=', userInput + '\uf8ff'));
+                } else if (buttonDropdown ==='User Email'){
+                    queryRequests = query(collection(db, 'requests'), where('requested_by', '>=', userInput), where('requested_by', '<=', userInput + '\uf8ff'));
+                }
+            } else {
+                console.log(status);
+                if (status === 'Accepted'){
+                    queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'));
+                } else if (status === 'Rejected'){
+                    queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'));
+                }
             }
             const querySnapshot = await getDocs(queryRequests);
             this.requests=[];
@@ -323,12 +361,34 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     requested_by: doc.data().requested_by,
                     reject_reason: doc.data().reject_reason,
                 };
-                this.requests.push(request);
+                if (status === 'Accepted' && doc.data().requested_by === this.userLogged) {
+                    console.log(status);
+                    if (doc.data().status === 'ACCEPTED') {
+                        this.requests.push(request);
+                    }
+                } else if (status==='Rejected' && doc.data().requested_by === this.userLogged){
+                    if (doc.data().status === 'REJECTED'){
+                        this.requests.push(request);
+                    }
+                } else if (status === 'Pending' && doc.data().requested_by === this.userLogged){
+                    if (doc.data().status === 'PENDING'){
+                        this.requests.push(request);
+                    }
+                } else if (doc.data().requested_by === this.userLogged) {
+                    this.requests.push(request);
+                }
             });
-            this.requestsLoaded = true;
+            this.booksLoaded = true;
         },
-        async getFilteredUserRequests(filteredUser) {
-            let queryRequests = query(collection(db, 'requests'), where('requested_by', '==', filteredUser));
+
+        async getFilteredUserRequests(userInput, typeSelected) {
+            let queryRequests = query(collection(db, 'requests'), where('requested_by', '>=', userInput), where('requested_by', '<=', userInput + '\uf8ff'));
+            if (typeSelected === 'Book Title'){
+                console.log(userInput);
+                queryRequests = query(collection(db, 'requests'), where('title', '>=', userInput), where('title', '<=', userInput + '\uf8ff'));
+            } else if (typeSelected === 'ISBN'){
+                queryRequests = query(collection(db, 'requests'), where('isbn', '>=', userInput), where('isbn', '<=', userInput + '\uf8ff'));
+            }
             this.requestsLoaded = false;
 
             const querySnapshot = await getDocs(queryRequests);
@@ -344,6 +404,35 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     requested_by: doc.data().requested_by,
                 };
                 this.requests.push(request);
+
+            });
+            this.requestsLoaded = true;
+        },
+        async getFilteredUserRequestsNormal(userInput, typeSelected) {
+            let queryRequests = query(collection(db, 'requests'), where('title', '>=', userInput), where('title', '<=', userInput + '\uf8ff'));
+
+            if (typeSelected === 'ISBN'){
+                queryRequests = query(collection(db, 'requests'), where('isbn', '>=', userInput), where('isbn', '<=', userInput + '\uf8ff'));
+            }
+            this.requestsLoaded = false;
+
+            const querySnapshot = await getDocs(queryRequests);
+            this.requests=[];
+            console.log(this.userLogged);
+            querySnapshot.forEach((doc) => {
+                let request = {
+                    id: doc.id,
+                    title: doc.data().title,
+                    isbn: doc.data().isbn,
+                    amazon_link: doc.data().amazon_link,
+                    reason: doc.data().reason,
+                    status: doc.data().status,
+                    requested_by: doc.data().requested_by,
+                };
+                if (doc.data().requested_by === this.userLogged){
+                    this.requests.push(request);
+                }
+
             });
             this.requestsLoaded = true;
         },

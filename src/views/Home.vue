@@ -1,6 +1,5 @@
 <template>
     <div>
-
     </div>
 </template>
 
@@ -18,9 +17,9 @@
 
     const fakePayload = {
         sub: '133434',
-        username: 'normal@mobileaction.co',
+        username: 'hassam.abdullah@mobileaction.co',
         membershipType: 'ADMIN',
-        accountId: 1,
+        accountId: 1001,
         maAdmin: false,
         type: 'access',
         platform: 'SEARCHADS_COM',
@@ -39,8 +38,6 @@
         ],
     };
     async function createUser() {
-        let currentDate = new Date(),
-            addedtime = currentDate.toString();
         userId.value = fakePayload.accountId.toString();
         userName.value = emailUsername(fakePayload.username);
         userEmail.value =  fakePayload.username;

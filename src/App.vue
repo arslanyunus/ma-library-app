@@ -1,5 +1,11 @@
 <template>
-    <the-nav/>
-    <router-view/>
+    <div>
+        <the-nav/>
+        <div>
+            <div>
+                <router-view/>
+            </div>
+        </div>
+    </div>
 </template>
 
