@@ -17,9 +17,9 @@
 
     const fakePayload = {
         sub: '133434',
-        username: 'yunus@mobileaction.co',
+        username: 'hassam.abdullah@mobileaction.co',
         membershipType: 'ADMIN',
-        accountId: 1000,
+        accountId: 1001,
         maAdmin: false,
         type: 'access',
         platform: 'SEARCHADS_COM',
@@ -32,7 +32,7 @@
             'EXPORT_CSV',
             'ACCESS_SDK_INTELLIGENCE',
             'ACCESS_SDK_INTELLIGENCE',
-            'ADMIN_MANAGE_ADMINS',
+            'ACCESS_ADMIN_DASHBOARD',
             //ACCESS_ADMIN_DASHBOARD
             //ADMIN_MANAGE_ADMINS
         ],

@@ -206,7 +206,7 @@
                          @change="resetFilterUserBooks"
                 />
             </div>
-            <div v-if="storeLibrary.booksLoaded" class="flex justify-between w-11/12 pl-12 pt-10">
+            <div v-if="storeLibrary.booksLoaded" class="flex justify-between w-full px-12 pt-10">
                 <div>
                     <a-dropdown>
                         <template #overlay>

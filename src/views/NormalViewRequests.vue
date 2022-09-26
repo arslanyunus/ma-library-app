@@ -118,7 +118,7 @@
                          @change="resetFilterUserRequests"
                 />
             </div>
-            <div v-if="storeLibrary.requestsLoaded" class="flex justify-between w-11/12 ml-12 pt-10">
+            <div v-if="storeLibrary.requestsLoaded" class="flex justify-between w-full px-12 pt-10">
                 <div>
                     <a-dropdown>
                         <template #overlay>
@@ -192,7 +192,6 @@
                     </span>
                 </template>
             </a-table-column>
-
         </a-table>
     </div>
 </template>

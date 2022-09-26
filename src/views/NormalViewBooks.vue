@@ -106,7 +106,7 @@
                         <a-tag color="green">{{record.status}}</a-tag>
                     </span>
                     <span v-if="record.status === 'RESERVED'" class= "text-rose-700">
-                        {<a-tag color="red">{{record.status}}</a-tag>
+                        <a-tag color="red">{{record.status}}</a-tag>
                     </span>
                 </template>
             </a-table-column>
