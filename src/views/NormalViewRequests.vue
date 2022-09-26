@@ -135,6 +135,10 @@
                                     <UserOutlined/>
                                     Pending
                                 </a-menu-item>
+                                <a-menu-item key="4">
+                                    <UserOutlined/>
+                                    All
+                                </a-menu-item>
                             </a-menu>
                         </template>
                         <a-button type="primary">
@@ -155,7 +159,7 @@
         </div>
         <a-table
             v-if="storeLibrary.requestsLoaded"
-            class="w-11/12 ml-12 mt-5" size="small"
+            class="w-full px-12 mt-5" size="small"
             :data-source="storeLibrary.requests"
             :pagination="{ pageSize: 5}"
         >
@@ -165,19 +169,26 @@
             <a-table-column key="amazon_link" title="Amazon Link" data-index="amazon_link"/>
             <a-table-column key="reason" title="Request Reason" data-index="reason">
                 <template #default="{ record }">
-                    <span class="text-sky-500" @click="showReason(record)">Click To View</span>
+                    <a-button type="primary"
+                              size="small"
+                              @click="showReason(record)"
+                    >View Reason</a-button>
                 </template>
             </a-table-column>
             <a-table-column key="status" title="Status" data-index="status">
                 <template #default="{ record }">
                     <span v-if="record.status === 'PENDING'" class ="text-blue-600">
-                        {{record.status}}
+                        <a-tag color="blue">{{record.status}}</a-tag>
                     </span>
                     <span v-if="record.status === 'ACCEPTED'" class= "text-green-500">
-                        {{record.status}}
+                        <a-tag color="green">{{record.status}}</a-tag>
                     </span>
-                    <span v-if="record.status === 'REJECTED'" class= "text-red-700" @click="giveUserReason(record)">
-                        {{record.status}}[Click to View]
+                    <span v-if="record.status === 'REJECTED'">
+                        <a-button class="md:mb-3 lg:mb-0" type="primary"
+                                  size="small"
+                                  danger
+                                  @click="giveUserReason(record)"
+                        >{{record.status}}</a-button>
                     </span>
                 </template>
             </a-table-column>
@@ -221,6 +232,7 @@
     function filterUserRequests(){
         if (buttonDropdownSelected.value !== 'Filter By'){
             storeLibrary.getFilteredUserRequestsNormal(filteredUser.value, buttonDropdownSelected.value);
+            buttonDropdownSelectedStatus.value = 'Filter (By Status)';
         }
     }
     function resetFilterUserRequests(){
@@ -244,8 +256,10 @@
             buttonDropdownSelectedStatus.value='Accepted';
         } else if (e.key === '2'){
             buttonDropdownSelectedStatus.value='Rejected';
-        } else {
+        } else if (e.key === '3'){
             buttonDropdownSelectedStatus.value='Pending';
+        } else {
+            buttonDropdownSelectedStatus.value='All';
         }
         storeLibrary.getRequestsByStatusNormal(buttonDropdownSelectedStatus.value, buttonDropdownSelected.value, filteredUser.value);
     }

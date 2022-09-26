@@ -290,11 +290,14 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     queryRequests = query(collection(db, 'requests'), where('requested_by', '>=', userInput), where('requested_by', '<=', userInput + '\uf8ff'));
                 }
             } else {
-                console.log(status);
                 if (status === 'Accepted'){
                     queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'));
+                    console.log();
                 } else if (status === 'Rejected'){
                     queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'));
+                }
+                else if (status === 'All'){
+                    queryRequests = query(collection(db, 'requests'));
                 }
             }
             const querySnapshot = await getDocs(queryRequests);
@@ -311,7 +314,6 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     reject_reason: doc.data().reject_reason,
                 };
                 if (status === 'Accepted') {
-                    console.log(status);
                     if (doc.data().status === 'ACCEPTED') {
                         this.requests.push(request);
                     }
@@ -332,7 +334,7 @@ export const useStoreLibrary = defineStore('storeLibrary', {
 
         async getRequestsByStatusNormal(status, buttonDropdown, userInput) {
             let queryRequests = query(collection(db, 'requests'), where('status', '==', 'PENDING')); //show all books
-            if (userInput.length !== 0){
+            if (userInput.length !== 0 && buttonDropdown !== 'Filter By'){
                 if (buttonDropdown === 'Book Title'){
                     queryRequests = query(collection(db, 'requests'), where('title', '>=', userInput), where('title', '<=', userInput + '\uf8ff'));
                 } else if (buttonDropdown === 'ISBN'){
@@ -346,6 +348,8 @@ export const useStoreLibrary = defineStore('storeLibrary', {
                     queryRequests = query(collection(db, 'requests'), where('status', '==', 'ACCEPTED'));
                 } else if (status === 'Rejected'){
                     queryRequests = query(collection(db, 'requests'), where('status', '==', 'REJECTED'));
+                } else if (status ==='All'){
+                    queryRequests = query(collection(db, 'requests'));
                 }
             }
             const querySnapshot = await getDocs(queryRequests);

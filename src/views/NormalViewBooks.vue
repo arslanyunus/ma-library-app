@@ -75,7 +75,7 @@
         </div>
         <a-table
             v-if="storeLibrary.booksLoaded"
-            class="w-11/12 pl-12 pt-7 " size="small"
+            class="w-full px-12 pt-7 " size="small"
             :data-source="storeLibrary.books"
             :pagination="{ pageSize: 5}"
         >
@@ -103,10 +103,10 @@
             <a-table-column key="status" title="Status" data-index="status">
                 <template #default="{ record }">
                     <span v-if="record.status === 'AVAILABLE'" class ="text-green-500">
-                        {{record.status}}
+                        <a-tag color="green">{{record.status}}</a-tag>
                     </span>
                     <span v-if="record.status === 'RESERVED'" class= "text-rose-700">
-                        {{record.status}}
+                        {<a-tag color="red">{{record.status}}</a-tag>
                     </span>
                 </template>
             </a-table-column>
@@ -142,7 +142,10 @@
     //Dropdown logic for the filtration of the table via user email, title etc
     const filteredUser = ref('');
     function filterUserBooks(){
-        storeLibrary.getFilteredUserBooks(filteredUser.value, buttonDropdownSelected.value);
+        if (buttonDropdownSelected.value !== 'Filter By'){
+            storeLibrary.getFilteredUserBooks(filteredUser.value, buttonDropdownSelected.value);
+            buttonDropdownSelectedStatus.value = 'Filter (By Status)';
+        }
     }
     function resetFilterUserBooks(){
         if (filteredUser.value === ''){

@@ -175,6 +175,10 @@
                                     <UserOutlined/>
                                     Pending
                                 </a-menu-item>
+                                <a-menu-item key="4">
+                                    <UserOutlined/>
+                                    All
+                                </a-menu-item>
                             </a-menu>
                         </template>
                         <a-button type="primary">
@@ -195,7 +199,7 @@
         </div>
         <a-table
             v-if="storeLibrary.requestsLoaded"
-            class="ma-keyword-table w-11/12 pl-12 mt-5" size="small"
+            class="ma-keyword-table w-full px-12 mt-5" size="small"
             :data-source="storeLibrary.requests"
             :pagination="{ pageSize: 5}"
         >
@@ -206,19 +210,22 @@
             <a-table-column key="amazon_link" title="Amazon Link" data-index="amazon_link"/>
             <a-table-column key="reason" title="Request Reason" data-index="reason">
                 <template #default="{ record }">
-                    <span class="text-sky-500" @click="showReason(record)">Click To View</span>
+                    <a-button type="primary"
+                              size="small"
+                              @click="showReason(record)"
+                    >View Reason</a-button>
                 </template>
             </a-table-column>
             <a-table-column key="status" title="Status" data-index="status">
                 <template #default="{ record }">
                     <span v-if="record.status === 'PENDING'" class ="text-blue-600">
-                        {{record.status}}
+                        <a-tag color="blue">{{record.status}}</a-tag>
                     </span>
                     <span v-if="record.status === 'ACCEPTED'" class= "text-green-500">
-                        {{record.status}}
+                        <a-tag color="green">{{record.status}}</a-tag>
                     </span>
                     <span v-if="record.status === 'REJECTED'" class= "text-rose-700">
-                        {{record.status}}
+                        <a-tag color="red">{{record.status}}</a-tag>
                     </span>
                 </template>
             </a-table-column>
@@ -285,7 +292,10 @@
     //Dropdown button Logic for searching requests via User Email/Book title etc
     const filteredUser = ref('');
     function filterUserRequests(){
-        storeLibrary.getFilteredUserRequests(filteredUser.value, buttonDropdownSelected.value);
+        if (buttonDropdownSelected.value !== 'Filter By'){
+            storeLibrary.getFilteredUserRequests(filteredUser.value, buttonDropdownSelected.value);
+            buttonDropdownSelectedStatus.value = 'Filter (By Status)';
+        }
     }
     function resetFilterUserRequests(){
         if (filteredUser.value === ''){
@@ -310,8 +320,10 @@
             buttonDropdownSelectedStatus.value='Accepted';
         } else if (e.key === '2'){
             buttonDropdownSelectedStatus.value='Rejected';
-        } else {
+        } else if (e.key === '3'){
             buttonDropdownSelectedStatus.value='Pending';
+        } else {
+            buttonDropdownSelectedStatus.value='All';
         }
         storeLibrary.getRequestsByStatus(buttonDropdownSelectedStatus.value, buttonDropdownSelected.value, filteredUser.value);
     }
